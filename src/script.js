@@ -49,6 +49,19 @@ const grassAmbientOcclusionTexture = textureLoader.load(
 );
 const grassNormalTexture = textureLoader.load("/textures/grass/normal.jpg");
 const grassRougnessTexture = textureLoader.load("/textures/grass/rougness.jpg");
+grassColorTexture.repeat.set(8, 8);
+grassAmbientOcclusionTexture.repeat.set(8, 8);
+grassNormalTexture.repeat.set(8, 8);
+grassRougnessTexture.repeat.set(8, 8);
+
+grassColorTexture.wrapS = THREE.RepeatWrapping;
+grassColorTexture.wrapT = THREE.RepeatWrapping;
+grassAmbientOcclusionTexture.wrapS = THREE.RepeatWrapping;
+grassAmbientOcclusionTexture.wrapT = THREE.RepeatWrapping;
+grassNormalTexture.wrapS = THREE.RepeatWrapping;
+grassNormalTexture.wrapT = THREE.RepeatWrapping;
+grassRougnessTexture.wrapS = THREE.RepeatWrapping;
+grassRougnessTexture.wrapT = THREE.RepeatWrapping;
 /**
  * House
  */
@@ -67,7 +80,10 @@ const walls = new THREE.Mesh(
     roughnessMap: bricksRougnessTexture,
   })
 );
-
+walls.geometry.setAttribute(
+  "uv2",
+  new THREE.Float32BufferAttribute(walls.geometry.attributes.uv.array, 2)
+);
 walls.position.y = 2.5 / 2;
 house.add(walls);
 
@@ -145,7 +161,19 @@ for (let i = 0; i < 20; i++) {
 // Floor
 const floor = new THREE.Mesh(
   new THREE.PlaneGeometry(20, 20),
-  new THREE.MeshStandardMaterial({ color: "#a9c388" })
+  new THREE.MeshStandardMaterial({
+    map: grassColorTexture,
+    normalMap: grassNormalTexture,
+    roughnessMap: grassRougnessTexture,
+    aoMap: grassAmbientOcclusionTexture,
+  })
+);
+floor.material.roughness = 0.2;
+gui.add(floor.material, "roughness").min(0).max(1).step(0.01);
+gui.add(floor.material, "metalness").min(0).max(1).step(0.01);
+floor.geometry.setAttribute(
+  "uv2",
+  new THREE.Float32BufferAttribute(floor.geometry.attributes.uv.array, 2)
 );
 floor.rotation.x = -Math.PI * 0.5;
 floor.position.y = 0;
@@ -171,6 +199,12 @@ scene.add(moonLight);
 const doorLight = new THREE.PointLight("#ff7d46", 1, 7);
 doorLight.position.set(0, 2.2, 2.7);
 house.add(doorLight);
+
+// Ghosts
+const ghost1 = new THREE.PointLight("#FF00FF", 2, 3);
+const ghost2 = new THREE.PointLight("#00ffff", 2, 3);
+const ghost3 = new THREE.PointLight("#ff00ff", 2, 3);
+scene.add(ghost1, ghost2, ghost3);
 
 /**
  * Sizes
@@ -233,6 +267,23 @@ const tick = () => {
 
   // Update controls
   controls.update();
+
+  // ghost update
+  const ghost1Angle = elapsedTime * 0.5;
+  ghost1.position.x = Math.cos(ghost1Angle) * 5;
+  ghost1.position.z = Math.sin(ghost1Angle) * 5;
+  ghost1.position.y = Math.sin(elapsedTime * 2);
+
+  const ghost2Angle = -elapsedTime * 0.2;
+  ghost2.position.x = Math.cos(ghost2Angle) * 7;
+  ghost2.position.z = Math.sin(ghost2Angle) * 7;
+  ghost2.position.y = Math.sin(elapsedTime * 2) + Math.sin(elapsedTime * 3);
+
+  const ghost3Angle = -elapsedTime * 0.18;
+  ghost3.position.x =
+    Math.cos(ghost3Angle) * (7 + Math.cos(elapsedTime & 0.32));
+  ghost3.position.z = Math.sin(ghost3Angle) * (7 + Math.sin(elapsedTime * 0.5));
+  ghost3.position.y = Math.sin(elapsedTime * 2) + Math.sin(elapsedTime * 3);
 
   // Render
   renderer.render(scene, camera);
